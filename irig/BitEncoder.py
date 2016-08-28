@@ -1,6 +1,6 @@
 from myhdl import *
 
-def BitEncoder(bit, pulse_length, request, ttl, enable, clk, rst):
+def BitEncoder(irig_bit, pulse_length, request, ttl_out, enable, clk, rst):
   """ Takes in a bit and drives it according to an IRIG specification
   There are three encoded symbols:
 
@@ -8,33 +8,49 @@ def BitEncoder(bit, pulse_length, request, ttl, enable, clk, rst):
     Logic 1: 0.5 of a bit time
     Logic 0: 0.2 of a bit time
 
-  bit        [1:0]   <input>  : 0, 1, or 2 (2 representing marker)
+  irig_bit        [1:0]   <input>  : 0, 1, or 2 (2 representing marker)
   enable             <input>  : enable bit
   pulse_length [7:0] <input>  : bit pulse length, in number of clock cycles
   request            <output> : goes high at the end of a bit time, indicating its time
                                 for the next bit
-  latched            <output> : goes high when the input bit is latched, indicating which
-                                data value is used for encoding
-          ___________________________________________________________
-  bit     X______0____X_____1_____X_____1_____X____2______X__________X
-                     _           _           _           _          _
-  request |_________| |_________| |_________| |_________| |________| |
-            _           _           _           _           _
-  latched _| |_________| |_________| |_________| |_________| |_______
-           __          _____       _____       ________    __
-  ttl   ..|  |________|     |_____|     |_____|        |__|  |________
+               ___________________________________________________________
+  irig_bit     X______0____X_____1_____X_____1_____X____2______X__________X
+                          _           _           _           _          _
+  request      |_________| |_________| |_________| |_________| |________| |
+                __          _____       _____       ________    __
+  ttl_out      |  |________|     |_____|     |_____|        |__|  |________
   """
 
-  @instance
-  def logic():
+  index = Signal(intbv(0)[4:])
+  ttl_high = Signal(False)
 
-    while True:
-      yield clk.posedge, rst.posedge
+  @always_comb
+  def comb_logic():
+    a = (irig_bit == 0 and index < pulse_length * 0.2)
+    b = (irig_bit == 1 and index < pulse_length * 0.5)
+    c = (irig_bit == 2 and index < pulse_length * 0.8)
+    ttl_high.next = a or b or c
 
-      if reset or not enable:  # TODO: see how this gets converted to verilog
-        ttl.next = bool(0)
-        latched.next = bool(0)
-        request.next = bool(0)
+  @always_seq(clk.posedge, reset=rst)
+  def seq_logic():
+    if enable:
+      index.next = (index + 1) % pulse_length
+
+      if ttl_high:
+        ttl_out.next = 1
       else:
+        ttl_out.next = 0
 
+      if index == pulse_length - 1:
+        request.next = 1
+      else:
+        request.next = 0
 
+  return seq_logic, comb_logic
+
+def convert(BitEncoder):
+  rst = ResetSignal(0, active=1, async=True)
+  request, ttl_out, enable, clk = [Signal(bool(0)) for i in range(4)]
+  pulse_length = Signal(intbv(0)[7:])
+  irig_bit = Signal(intbv(0)[2:])
+  toVerilog(BitEncoder, irig_bit, pulse_length, request, ttl_out, enable, clk, rst)

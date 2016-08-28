@@ -1,25 +1,22 @@
 from myhdl import *
-from irig import BitEncoder
+from irig.BitEncoder import BitEncoder
+import random
 
 PERIOD = 1000
 
 def bench():
-  request, ttl, enable, clk, rst = [Signal(bool(0)) for i in range(5)]
-  bit = Signal(intbv(0)[2:]
+  rst = ResetSignal(0, active=1, async=True)
+  request, ttl, enable, clk = [Signal(bool(0)) for i in range(4)]
+  bit = Signal(intbv(0)[2:])
   pulse_length = Signal(intbv(0)[8:])
 
   dut = BitEncoder(bit, pulse_length, request, ttl, enable, clk, rst)
 
-  bit_sent = Signal(intbv(0)[2:])  # shadow input so we can change whenever we like
   pulse_counter = Signal(intbv(0)[8:])
 
   @always(delay(PERIOD//2))
   def clkgen():
-    clock.next = not clock
-
-  @always(latched.posedge)
-  def latched_bit():
-    bit_sent.next = bit
+    clk.next = not clk
 
   @always(clk.negedge)
   def count_pulses():
@@ -30,12 +27,12 @@ def bench():
   def monitor():
     while True:
       yield request.posedge  # bit was sent
-      assert bit_sent in [0, 1, 2]
-      if bit_sent == 0:
+      assert bit in [0, 1, 2]
+      if bit == 0:
         assert pulse_counter == int(pulse_length * 0.2)
-      elif bit_sent == 1:
+      elif bit == 1:
         assert pulse_counter == int(pulse_length * 0.5)
-      elif bit_sent == 2:
+      elif bit == 2:
         assert pulse_counter == int(pulse_length * 0.8)
 
   @instance
@@ -44,19 +41,21 @@ def bench():
     enable.next = bool(0)
     yield clk.negedge 
     rst.next = bool(0)
+    pulse_length.next = 10
     yield clk.negedge 
     enable.next = bool(1)
 
     for i in range(100):
-      bit = randchoice([0, 1, 2])
+      bit.next = random.choice([0, 1, 2])
       yield request.posedge
 
     raise StopSimulation
 
-  return dut, clkgen, latched_bit, count_pulses, monitor, stimulus
+  return dut, clkgen, count_pulses, monitor, stimulus
 
 def test_bench():
-  sim = Simulation(bench())
+  sim = traceSignals(bench)
+  sim = Simulation(sim)
   sim.run()
 
 if __name__ == '__main__':
