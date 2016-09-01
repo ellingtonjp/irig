@@ -1,5 +1,5 @@
 from myhdl import *
-from irig.BitEncoder import BitEncoder
+from BitEncoder import BitEncoder
 import random
 
 PERIOD = 1000
