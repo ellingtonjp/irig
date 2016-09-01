@@ -1,9 +1,6 @@
 from myhdl import *
-from FrameShiftRegister import FrameShiftRegister
-from BitEncoder import BitEncoder
-from Irig import IrigTTLOutput
+from irig import hardware, utilities
 import random
-from software.irigtime import random_frame
 
 PERIOD = 1000
 
@@ -12,7 +9,7 @@ def bench():
   frame_latched, ttl_out, enable, clk = [Signal(bool(0)) for i in range(4)]
   next_frame = Signal(intbv(0)[100:])
 
-  dut = IrigTTLOutput(next_frame, frame_latched, ttl_out, enable, clk, rst)
+  dut = hardware.IrigTTLOutput(next_frame, frame_latched, ttl_out, enable, clk, rst)
   frame = Signal(intbv(0)[100:])
 
   @always(delay(PERIOD//2))
@@ -60,7 +57,7 @@ def bench():
     yield clk.negedge 
     rst.next = bool(0)
 
-    frame = random_frame().replace('_','0')
+    frame = utilities.random_frame().replace('_','0')
     next_frame.next = int(frame, 2)
 
     yield clk.negedge 
@@ -69,7 +66,7 @@ def bench():
     num_frames = 10
     for i in range(num_frames): 
       yield frame_latched.negedge  # wait til frame is latched before changing it
-      frame = random_frame().replace('_','0')
+      frame = utilities.random_frame().replace('_','0')
       next_frame.next = int(frame, 2)
 
     raise StopSimulation

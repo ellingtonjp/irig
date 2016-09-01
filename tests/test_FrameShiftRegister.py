@@ -1,7 +1,6 @@
 from myhdl import *
-from irig.FrameShiftRegister import FrameShiftRegister
+from irig import hardware, utilities
 import random
-from software.irigtime import random_frame
 
 PERIOD = 1000
 
@@ -12,7 +11,7 @@ def bench():
   irig_bit = Signal(intbv(0)[2:])
   irig_frame = Signal(intbv(0)[100:])
 
-  dut = FrameShiftRegister(irig_frame, frame_latched, irig_bit, request, enable, clk, rst)
+  dut = hardware.FrameShiftRegister(irig_frame, frame_latched, irig_bit, request, enable, clk, rst)
   frame = Signal(intbv(0)[100:])
 
   @always(delay(PERIOD//2))
@@ -57,7 +56,7 @@ def bench():
     yield clk.negedge 
     rst.next = bool(0)
 
-    frame = random_frame().replace('_','0')
+    frame = utilities.random_frame().replace('_','0')
     irig_frame.next = int(frame, 2)
 
     yield clk.negedge 
@@ -66,7 +65,7 @@ def bench():
     num_frames = 10
     for i in range(num_frames): 
       yield frame_latched.negedge  # wait til frame is latched before changing it
-      frame = random_frame().replace('_','0')
+      frame = utilities.random_frame().replace('_','0')
       irig_frame.next = int(frame, 2)
 
     raise StopSimulation

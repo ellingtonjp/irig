@@ -1,5 +1,5 @@
 from myhdl import *
-from BitEncoder import BitEncoder
+from irig import hardware
 import random
 
 PERIOD = 1000
@@ -10,7 +10,7 @@ def bench():
   bit = Signal(intbv(0)[2:])
   pulse_length = Signal(intbv(0)[8:])
 
-  dut = BitEncoder(bit, pulse_length, request, ttl, enable, clk, rst)
+  dut = hardware.BitEncoder(bit, pulse_length, request, ttl, enable, clk, rst)
 
   pulse_counter = Signal(intbv(0)[8:])
 
