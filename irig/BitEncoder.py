@@ -4,11 +4,11 @@ def BitEncoder(irig_bit, pulse_length, request, ttl_out, enable, clk, rst):
   """ Takes in a bit and drives it according to an IRIG specification
   There are three encoded symbols:
 
-    Marker:  0.8 of a bit time
-    Logic 1: 0.5 of a bit time
-    Logic 0: 0.2 of a bit time
+    Marker:  0.8 of pulse_length
+    Logic 1: 0.5 of pulse_length
+    Logic 0: 0.2 of pulse_length
 
-  irig_bit        [1:0]   <input>  : 0, 1, or 2 (2 representing marker)
+  irig_bit     [1:0] <input>  : 0, 1, or 2 (2 representing marker)
   enable             <input>  : enable bit
   pulse_length [7:0] <input>  : bit pulse length, in number of clock cycles
   request            <output> : goes high at the end of a bit time, indicating its time
@@ -41,6 +41,7 @@ def BitEncoder(irig_bit, pulse_length, request, ttl_out, enable, clk, rst):
       else:
         ttl_out.next = 0
 
+      # Send request at end of bit
       if index == pulse_length - 1:
         request.next = 1
       else:
