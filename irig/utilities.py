@@ -27,16 +27,19 @@ def random_bit():
     """
     return random.choice(['0', '1', '_'])
 
-def random_frame():
+def random_frame(nbits=100):
     """Generates a random, but valid, IRIG frame, in the form a bit string, 
     with marks and zeros in the correct locations. 
     >>> random.seed(1)
     >>> random_frame()
     '_00100111_100100110_011000100_000001010_010001010_011001001_000000000_000000000_011011110_101101101_'
+    >>> random.seed(1)
+    >>> random_frame(60)
+    '_00100111_100100110_011000100_000001010_010001010_011001001_'
     """
 
     # All bits at these indices should be marks (0, 9, 19 .. 79, 89, 99)
-    mark_indices = {x for x in range(NUM_FRAME_BITS+1) if x == 0 or (x+1)%10 == 0}
+    mark_indices = {x for x in range(nbits+1) if x == 0 or (x+1)%10 == 0}
 
     # All bits at these indices are forced zero based on IRIG protocol
     zero_indices = {5, 14, 18, 24, 27, 28, 34, 42, 43, 44, 54}
@@ -45,7 +48,7 @@ def random_frame():
     zero_indices.add(99)
 
     bits = ''
-    for i in range(NUM_FRAME_BITS):
+    for i in range(nbits):
       if i in mark_indices:
         bits += '_'
       elif i in zero_indices:

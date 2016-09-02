@@ -10,7 +10,7 @@ def bench():
   bit = Signal(intbv(0)[2:])
   pulse_length = Signal(intbv(0)[8:])
 
-  dut = hardware.BitEncoder(bit, pulse_length, request, ttl, enable, clk, rst)
+  dut = hardware.BitEncoder(bit, request, ttl, enable, clk, rst)
 
   pulse_counter = Signal(intbv(0)[8:])
 
